@@ -11,7 +11,9 @@ import matplotlib.pyplot as plt
 """implementation of the Variational Recurrent
 Neural Network (VRNN) from https://arxiv.org/abs/1506.02216
 using unimodal isotropic gaussian distributions for 
-inference, prior, and generating models."""
+inference, prior, and generating models.
+	original source from: https://github.com/emited/VariationalRecurrentNeuralNetwork
+"""
 
 
 class VRNN(nn.Module):

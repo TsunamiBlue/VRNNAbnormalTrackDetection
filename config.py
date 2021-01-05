@@ -21,6 +21,8 @@ batch_size = 128
 fix_seed = 128
 print_every = 100
 save_every = 10
+split_ratio = 0.2
+cross_validation = False
 
 # PATH
 MAIN_PATH = os.path.abspath(os.path.dirname(__file__) + "./../")
