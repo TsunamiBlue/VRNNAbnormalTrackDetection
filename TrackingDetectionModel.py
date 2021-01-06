@@ -92,7 +92,7 @@ class TrackingDetectionModel:
         # activate plotting
         plt.ion()
 
-    def train_from_scratch(self):
+    def train_from_scratch(self,output_path=None):
         """
         zero-knowledge in this area and train model from scratch with training set.
         :param: n_epochs:int, you can change the number of epochs before training.
@@ -103,11 +103,11 @@ class TrackingDetectionModel:
             self.train_one_epoch(epoch)
             self.validate_current_epoch(epoch)
 
-            # saving model
-            # if epoch % self.save_every == 1:
-            #     fn = 'saves/vrnn_state_dict_' + str(epoch) + '.pth'
-            #     torch.save(self.model.state_dict(), fn)
-            #     print('Saved model to ' + fn)
+        # save model to given path
+        if output_path is not None:
+            path = output_path+'/vrnn_state_dict_test.pth'
+            torch.save(self.model.state_dict(),path)
+            print(f"DONE. Saved model at {path}")
 
     def train_one_epoch(self, epoch):
         """
@@ -257,7 +257,7 @@ if __name__ == '__main__':
     mnist_data = (train_loader, test_loader)
     TDModel = TrackingDetectionModel(cfgs)
     TDModel.generate_dataloader(raw=mnist_data,already_loaded=True)
-    TDModel.train_from_scratch()
+    TDModel.train_from_scratch(output_path=cfgs.MODEL_DATA_PATH)
     ## hyperparameters
     # x_dim = cfg.x_dim
     # h_dim = cfg.h_dim
