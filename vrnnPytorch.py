@@ -5,7 +5,7 @@ import torch.utils
 import torch.utils.data
 from torchvision import datasets, transforms
 from torch.autograd import Variable
-import matplotlib.pyplot as plt 
+import matplotlib.pyplot as plt
 
 
 """implementation of the Variational Recurrent
@@ -82,7 +82,7 @@ class VRNN(nn.Module):
 
 		h = Variable(torch.zeros(self.n_layers, x.size(1), self.h_dim))
 		for t in range(x.size(0)):
-			
+
 			phi_x_t = self.phi_x(x[t])
 
 			#encoder
@@ -137,7 +137,7 @@ class VRNN(nn.Module):
 			#sampling and reparameterization
 			z_t = self._reparameterized_sample(prior_mean_t, prior_std_t)
 			phi_z_t = self.phi_z(z_t)
-			
+
 			#decoder
 			dec_t = self.dec(torch.cat([phi_z_t, h[-1]], 1))
 			dec_mean_t = self.dec_mean(dec_t)
@@ -149,7 +149,7 @@ class VRNN(nn.Module):
 			_, h = self.rnn(torch.cat([phi_x_t, phi_z_t], 1).unsqueeze(0), h)
 
 			sample[t] = dec_mean_t.data
-	
+
 		return sample
 
 
@@ -171,15 +171,16 @@ class VRNN(nn.Module):
 
 	def _kld_gauss(self, mean_1, std_1, mean_2, std_2):
 		"""Using std to compute KLD"""
-
-		kld_element =  (2 * torch.log(std_2) - 2 * torch.log(std_1) + 
+		eps = torch.finfo(torch.float32).eps
+		kld_element =  (2 * torch.log(std_2+eps) - 2 * torch.log(std_1+eps) +
 			(std_1.pow(2) + (mean_1 - mean_2).pow(2)) /
 			std_2.pow(2) - 1)
 		return	0.5 * torch.sum(kld_element)
 
 
 	def _nll_bernoulli(self, theta, x):
-		return - torch.sum(x*torch.log(theta) + (1-x)*torch.log(1-theta))
+		eps = torch.finfo(torch.float32).eps
+		return - torch.sum(x*torch.log(theta+eps) + (1-x)*torch.log(1-theta+eps))
 
 
 	def _nll_gauss(self, mean, std, x):
