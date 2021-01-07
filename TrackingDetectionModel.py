@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 from vrnnPytorch import VRNN
 import config as cfgs
 from sklearn.model_selection import train_test_split
+import os
 import numpy as np
 
 """
@@ -105,7 +106,8 @@ class TrackingDetectionModel:
 
         # save model to given path
         if output_path is not None:
-            path = output_path+'/vrnn_state_dict_test.pth'
+            path = os.path.join(output_path,'vrnn_state_dict_test.pth')
+            print(path)
             torch.save(self.model.state_dict(),path)
             print(f"DONE. Saved model at {path}")
 
