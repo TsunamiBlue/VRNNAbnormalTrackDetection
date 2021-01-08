@@ -177,71 +177,10 @@ class TrackingDetectionModel:
             mean_kld_loss, mean_nll_loss))
 
 
-# def train(epoch, optimizer):
-#     """
-#     Training based on Variation Recurrent Neural Network
-#     :param optimizer: any torch optimizer
-#     :param epoch: Int
-#     :return: None
-#     """
-#     train_loss = 0
-#     for batch_idx, (data, _) in enumerate(train_loader):
-#
-#         # transforming data
-#         # data = Variable(data)
-#         # to remove eventually
-#         data = Variable(data.squeeze().transpose(0, 1))
-#         data = (data - data.min().data.item()) / (data.max().data.item() - data.min().data.item())
-#
-#         # forward + backward + optimize
-#         optimizer.zero_grad()
-#         kld_loss, nll_loss, _, _ = model(data)
-#         loss = kld_loss + nll_loss
-#         loss.backward()
-#         optimizer.step()
-#
-#         # grad norm clipping, only in pytorch version >= 1.10
-#         nn.utils.clip_grad_norm(model.parameters(), clip)
-#
-#         # printing
-#         if batch_idx % print_every == 0:
-#             print('Train Epoch: {} [{}/{} ({:.0f}%)]\t KLD Loss: {:.6f} \t NLL Loss: {:.6f}'.format(
-#                 epoch, batch_idx * len(data), len(train_loader.dataset),
-#                        100. * batch_idx / len(train_loader),
-#                        kld_loss.data.item() / batch_size,
-#                        nll_loss.data.item() / batch_size))
-#
-#             sample = model.sample(28)
-#             plt.imshow(sample.numpy())
-#             plt.pause(1e-6)
-#
-#         train_loss += loss.data.item()
-#
-#     print('====> Epoch: {} Average loss: {:.4f}'.format(
-#         epoch, train_loss / len(train_loader.dataset)))
-#
-#
-# def test(epoch):
-#     """
-#      Evaluation based on both KL-Divergence and Negative Log Likelihood loss
-#     :param epoch: Int
-#     :return:
-#     """
-#     mean_kld_loss, mean_nll_loss = 0, 0
-#     for i, (data, _) in enumerate(test_loader):
-#         # data = Variable(data)
-#         data = Variable(data.squeeze().transpose(0, 1))
-#         data = (data - data.min().data.item()) / (data.max().data.item() - data.min().data.item())
-#
-#         kld_loss, nll_loss, _, _ = model(data)
-#         mean_kld_loss += kld_loss.data.item()
-#         mean_nll_loss += nll_loss.data.item()
-#
-#     mean_kld_loss /= len(test_loader.dataset)
-#     mean_nll_loss /= len(test_loader.dataset)
-#
-#     print('====> Test set loss: KLD Loss = {:.4f}, NLL Loss = {:.4f} '.format(
-#         mean_kld_loss, mean_nll_loss))
+def trans(data):
+    data = Variable(data.squeeze().transpose(0, 1))
+    data = (data - data.min().data.item()) / (data.max().data.item() - data.min().data.item())
+    return data
 
 
 if __name__ == '__main__':
@@ -261,3 +200,6 @@ if __name__ == '__main__':
     TDModel.generate_dataloader(raw=mnist_data,already_loaded=True)
     TDModel.train_from_scratch(output_path=cfgs.MODEL_DATA_PATH)
 
+
+    # predictions = [TDModel.model(trans(data)) for i,(data,_) in enumerate(test_loader)]
+    # print(predictions)

@@ -26,5 +26,6 @@ cross_validation = False
 
 # PATH
 MAIN_PATH = os.path.abspath(os.path.dirname(__file__) + "./../")
-TRAINING_DATA_PATH = os.path.join(MAIN_PATH,'data','trainingData')
+TRAINING_DATA_PATH = os.path.join(MAIN_PATH,'VRNNAbnormalTrackingDetection','data','trainingData')
+# print(TRAINING_DATA_PATH)
 MODEL_DATA_PATH = os.path.join(MAIN_PATH,'VRNNAbnormalTrackingDetection','data','saves')
