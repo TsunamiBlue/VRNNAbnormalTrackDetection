@@ -13,8 +13,8 @@ import os
 x_dim = 28
 h_dim = 100
 z_dim = 16
-n_layers = 3
-n_epochs = 1
+n_layers = 1
+n_epochs = 10
 clip = 10
 learning_rate = 1e-3
 batch_size = 128
