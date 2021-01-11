@@ -9,24 +9,30 @@ import numpy as np
 if __name__ == '__main__':
     plt.ion()
     test_model_path = os.path.join(cfgs.MODEL_DATA_PATH, "vrnn_state_dict_test.pth")
-    test_data_path = os.path.join(cfgs.TRAINING_DATA_PATH, 'data1.txt')
+    test_data_path = os.path.join(cfgs.TRAINING_DATA_PATH, '202012.txt')
     your_dirty_dataset = []
     X = []
     Y = []
-    const = 1
+    const = 60000
     with open(test_data_path, 'r') as f:
         for i, data in enumerate(f.readlines()):
-            x = float(data.split(',')[1]) / const
-            y = float(data.split(',')[2]) / const
+            split_data = data.split(',')
+            x = float(split_data[1]) / const
+            y = float(split_data[2]) / const
             modified_data = np.array([x, y])
             # print(modified_data)
-            your_dirty_dataset.append(modified_data)
+            your_dirty_dataset.append(split_data)
             X.append(x)
             Y.append(y)
     f.close()
     print("stop read files...")
+    print(f"totally {len(your_dirty_dataset)} points.")
     # print(your_dirty_dataset[:][0])
     # print(X)
+    X = np.random.normal(5.0, 1.0, 300000)
+    Y = np.random.normal(5.0, 1.0, 300000)
     plt.scatter(X, Y)
+    plt.show()
+    input()
     print("plot finished...")
-    plt.pause(1e-6)
+    # plt.pause(1e6)

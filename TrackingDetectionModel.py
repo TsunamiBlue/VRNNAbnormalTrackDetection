@@ -5,7 +5,8 @@ import torch.utils
 import torch.utils.data
 from torchvision import datasets, transforms
 from torch.autograd import Variable
-import matplotlib.pyplot as plt
+# import matplotlib
+from matplotlib import pyplot as plt
 from vrnnPytorch import VRNN
 import config as cfgs
 from sklearn.model_selection import train_test_split
@@ -68,10 +69,10 @@ class TrackingDetectionModel:
             self.train_loader = raw[0]
             self.test_loader = raw[1]
         else:
-            (training_data, test_data) = train_test_split(self.raw_data, self.split_ratio)
+            (training_data, test_data) = train_test_split(self.raw_data, test_size=self.split_ratio)
             # training_labels = np.ones(len(training_data))
-            training_dataset = torch.utils.data.TensorDataset(training_data)
-            testing_dataset = torch.utils.data.TensorDataset(test_data)
+            training_dataset = torch.utils.data.TensorDataset(torch.cat(training_data, dim=0))
+            testing_dataset = torch.utils.data.TensorDataset(torch.cat(test_data, dim=0))
             # generate loader
             self.train_loader = torch.utils.data.DataLoader(
                 training_dataset,
@@ -93,22 +94,21 @@ class TrackingDetectionModel:
         # activate plotting
         plt.ion()
 
-    def train_from_scratch(self,output_path=None):
+    def train_from_scratch(self, output_path=None):
         """
         zero-knowledge in this area and train model from scratch with training set.
         :param: n_epochs:int, you can change the number of epochs before training.
         :return:
         """
         for epoch in range(1, self.n_epochs + 1):
-
             self.train_one_epoch(epoch)
             self.validate_current_epoch(epoch)
 
         # save model to given path
         if output_path is not None:
-            path = os.path.join(output_path,'vrnn_state_dict_test.pth')
+            path = os.path.join(output_path, 'vrnn_state_dict_test.pth')
             print(path)
-            torch.save(self.model.state_dict(),path)
+            torch.save(self.model.state_dict(), path)
             print(f"DONE. Saved model at {path}")
 
     def train_one_epoch(self, epoch):
@@ -118,8 +118,9 @@ class TrackingDetectionModel:
         :return: None
         """
         train_loss = 0
-        for batch_idx, (data, _) in enumerate(self.train_loader):
-
+        for batch_idx, (data, sec) in enumerate(self.train_loader):
+            print(type(data))
+            print(sec)
             # transforming data
             # data = Variable(data)
             # to remove eventually
@@ -183,6 +184,18 @@ def trans(data):
     return data
 
 
+class AISDataset(torch.utils.data.Dataset):
+    def __init__(self, datapoints):
+        super().__init__()
+        self.datapoints = datapoints
+
+    def __getitem__(self, idx):
+        return self.datapoints[idx]
+
+    def __len__(self):
+        return len(self.datapoints)
+
+
 if __name__ == '__main__':
     plt.ion()
     # test model with mnist
@@ -197,9 +210,16 @@ if __name__ == '__main__':
         batch_size=cfgs.batch_size, shuffle=True)
     mnist_data = (train_loader, test_loader)
     TDModel = TrackingDetectionModel(cfgs)
-    TDModel.generate_dataloader(raw=mnist_data,already_loaded=True)
+    TDModel.generate_dataloader(raw=mnist_data, already_loaded=True)
     TDModel.train_from_scratch(output_path=cfgs.MODEL_DATA_PATH)
 
+    # # ty w/ ais dataset
+    # ais_data = np.loadtxt(os.path.join(cfgs.TRAINING_DATA_PATH, '202012.txt'), delimiter=',')
+    # ais_tensors = torch.tensor(ais_data)
+    # ais_dataset = AISDataset(ais_tensors)
+    # TDModel = TrackingDetectionModel(cfgs)
+    # TDModel.generate_dataloader(raw=ais_dataset)
+    # TDModel.train_from_scratch(output_path=cfgs.MODEL_DATA_PATH)
 
     # predictions = [TDModel.model(trans(data)) for i,(data,_) in enumerate(test_loader)]
     # print(predictions)
