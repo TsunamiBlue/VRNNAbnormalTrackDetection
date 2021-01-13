@@ -41,9 +41,23 @@ def delete_bad_tracks(tracks: list, mmsi,period_threshold=14400):
     """
     print(f"delete bad tracks..")
     ans = []
+    # too short
     if tracks[-1][-1] - tracks[0][-1] <= period_threshold:
         return []
-    if cfgs.LA
+    for log in tracks:
+        time_trigger = tracks[0][]
+        if cfgs.LAT_MAX < log[1] < cfgs.LAT_MIN:
+            return[]
+        if cfgs.LON_MAX < log[2] < cfgs.LON_MIN:
+            return[]
+        if cfgs.COG_MAX < log[2] < cfgs.COG_MIN:
+            return[]
+        if cfgs.SOG_MAX < log[2] < cfgs.SOG_MIN:
+            return[]
+
+
+
+
 
 
 def data_preprocessing(raw_data, unused_attribute=None):
