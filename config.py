@@ -10,7 +10,7 @@ import os
 
 # hyperparameters
 
-x_dim = 28
+x_dim = 1
 h_dim = 100
 z_dim = 16
 n_layers = 1
@@ -23,6 +23,24 @@ print_every = 100
 save_every = 10
 split_ratio = 0.2
 cross_validation = False
+
+# analysis boundaries
+# coordinate, unit is degree
+LAT_MIN = -90
+LAT_MAX = 90.0
+LON_MIN = -180
+LON_MAX = 180
+LAT_RANGE = LAT_MAX - LAT_MIN
+LON_RANGE = LON_MAX - LON_MIN
+# speed, unit is knots
+SOG_MIN = 3
+SOG_MAX = 30.0
+# course, unit is degree
+COG_MIN = 0
+COG_MAX = 360
+# heading, unit is degree
+HEADING_MIN = 0
+HEADING_MAX = 0
 
 # PATH
 MAIN_PATH = os.path.abspath(os.path.dirname(__file__) + "./../")

@@ -12,6 +12,8 @@ import config as cfgs
 from sklearn.model_selection import train_test_split
 import os
 import numpy as np
+from collections import defaultdict
+from DataPreprocessing import data_preprocessing
 
 """
     A tracking detection model using VRNN as the core algorithm based on Pytorch.
@@ -22,7 +24,7 @@ import numpy as np
 
 class TrackingDetectionModel:
     """
-    A deep learning class class all in one.
+    A deep learning class, all in one.
     """
 
     def __init__(self, cfg):
@@ -71,8 +73,8 @@ class TrackingDetectionModel:
         else:
             (training_data, test_data) = train_test_split(self.raw_data, test_size=self.split_ratio)
             # training_labels = np.ones(len(training_data))
-            training_dataset = torch.utils.data.TensorDataset(torch.cat(training_data, dim=0))
-            testing_dataset = torch.utils.data.TensorDataset(torch.cat(test_data, dim=0))
+            training_dataset = AISDataset(training_data)
+            testing_dataset = AISDataset(test_data)
             # generate loader
             self.train_loader = torch.utils.data.DataLoader(
                 training_dataset,
@@ -107,7 +109,6 @@ class TrackingDetectionModel:
         # save model to given path
         if output_path is not None:
             path = os.path.join(output_path, 'vrnn_state_dict_test.pth')
-            print(path)
             torch.save(self.model.state_dict(), path)
             print(f"DONE. Saved model at {path}")
 
@@ -118,15 +119,15 @@ class TrackingDetectionModel:
         :return: None
         """
         train_loss = 0
-        for batch_idx, (data, sec) in enumerate(self.train_loader):
-            print(type(data))
-            print(sec)
+        for batch_idx, data in enumerate(self.train_loader):
+            # print(data)
             # transforming data
             # data = Variable(data)
             # to remove eventually
-            data = Variable(data.squeeze().transpose(0, 1))
+            data = Variable(data[0].squeeze())
+            print(data.shape)
             data = (data - data.min().data.item()) / (data.max().data.item() - data.min().data.item())
-
+            print(data.shape)
             # forward, backward, optimize
             self.optimizer.zero_grad()
             kld_loss, nll_loss, enc_log, dec_log = self.model(data)
@@ -178,48 +179,55 @@ class TrackingDetectionModel:
             mean_kld_loss, mean_nll_loss))
 
 
-def trans(data):
-    data = Variable(data.squeeze().transpose(0, 1))
-    data = (data - data.min().data.item()) / (data.max().data.item() - data.min().data.item())
-    return data
-
-
 class AISDataset(torch.utils.data.Dataset):
+    """
+    a dataset class for ais data.
+    """
+
     def __init__(self, datapoints):
         super().__init__()
-        self.datapoints = datapoints
+        self.raw_data = datapoints
+        self.shape = datapoints.shape
 
     def __getitem__(self, idx):
-        return self.datapoints[idx]
+        return self.raw_data[idx]
 
     def __len__(self):
-        return len(self.datapoints)
+        return len(self.raw_data)
+
+
+
 
 
 if __name__ == '__main__':
     plt.ion()
+    flag = False
+    # flag = True
     # test model with mnist
-    train_loader = torch.utils.data.DataLoader(
-        datasets.MNIST('data', train=True, download=True,
-                       transform=transforms.ToTensor()),
-        batch_size=cfgs.batch_size, shuffle=True)
-
-    test_loader = torch.utils.data.DataLoader(
-        datasets.MNIST('data', train=False,
-                       transform=transforms.ToTensor()),
-        batch_size=cfgs.batch_size, shuffle=True)
-    mnist_data = (train_loader, test_loader)
-    TDModel = TrackingDetectionModel(cfgs)
-    TDModel.generate_dataloader(raw=mnist_data, already_loaded=True)
-    TDModel.train_from_scratch(output_path=cfgs.MODEL_DATA_PATH)
-
-    # # ty w/ ais dataset
-    # ais_data = np.loadtxt(os.path.join(cfgs.TRAINING_DATA_PATH, '202012.txt'), delimiter=',')
-    # ais_tensors = torch.tensor(ais_data)
-    # ais_dataset = AISDataset(ais_tensors)
-    # TDModel = TrackingDetectionModel(cfgs)
-    # TDModel.generate_dataloader(raw=ais_dataset)
-    # TDModel.train_from_scratch(output_path=cfgs.MODEL_DATA_PATH)
+    if flag:
+        train_loader = torch.utils.data.DataLoader(
+            datasets.MNIST('data', train=True, download=True,
+                           transform=transforms.ToTensor()),
+            batch_size=cfgs.batch_size, shuffle=True)
+        print(datasets.MNIST('data', train=False,
+                             transform=transforms.ToTensor()).data.shape)
+        test_loader = torch.utils.data.DataLoader(
+            datasets.MNIST('data', train=False,
+                           transform=transforms.ToTensor()),
+            batch_size=cfgs.batch_size, shuffle=True)
+        mnist_data = (train_loader, test_loader)
+        TDModel = TrackingDetectionModel(cfgs)
+        TDModel.generate_dataloader(raw=mnist_data, already_loaded=True)
+        TDModel.train_from_scratch(output_path=cfgs.MODEL_DATA_PATH)
+    else:
+        # ty w/ ais dataset
+        ais_data = np.loadtxt(os.path.join(cfgs.TRAINING_DATA_PATH, '202012.txt'), delimiter=',')
+        ais_data = data_preprocessing(ais_data)
+        ais_dataset = AISDataset(ais_data)
+        TDModel = TrackingDetectionModel(cfgs)
+        TDModel.generate_dataloader(raw=ais_dataset)
+        # print(TDModel.train_loader.dataset.shape)
+        # TDModel.train_from_scratch(output_path=cfgs.MODEL_DATA_PATH)
 
     # predictions = [TDModel.model(trans(data)) for i,(data,_) in enumerate(test_loader)]
     # print(predictions)
