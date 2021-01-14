@@ -4,6 +4,7 @@ import config as cfgs
 import os
 import numpy as np
 from collections import defaultdict
+from sklearn import preprocessing
 
 
 def down_sampling(tracks: list, mmsi, interval=600):
@@ -61,9 +62,47 @@ def delete_bad_tracks(tracks: list, mmsi, period_threshold=14400, anchor_ratio=0
     if float(counter/track_length) > anchor_ratio:
         return True
 
-def normalization(tracks: list, mmsi)
 
-def data_preprocessing(raw_data, unused_attribute=None, four_hot_encoding=False):
+def normalization(track_dict,backward_padding=True):
+    """
+    A standard normalization for tracks. config should have boundary info.
+
+    :param backward_padding:
+    :param track_dict: mmsi as key, the array of the rest info as value.
+    :return: Tensor:[attribute, dataset,time]
+    """
+    ans = torch.Tensor()
+    tensor_track = []
+    for each_track in track_dict.values():
+        datapoint = []
+        for log in each_track:
+            lat_normalized = (log[0]-cfgs.LAT_MIN)/(cfgs.LAT_MAX-cfgs.LAT_MIN)
+            lon_normalized = (log[1]-cfgs.LON_MIN)/(cfgs.LON_MAX-cfgs.LON_MIN)
+            speed_normalized = (log[2]-cfgs.SOG_MIN)/(cfgs.SOG_MAX-cfgs.SOG_MIN)
+            course_normalized = (log[3]-cfgs.COG_MIN)/(cfgs.COG_MAX-cfgs.COG_MIN)
+            single = torch.Tensor([lat_normalized,lon_normalized,speed_normalized,course_normalized])
+            datapoint.append(single)
+        tensor_track.append(torch.stack(tuple(datapoint),dim=0))
+        print(tensor_track)
+    # TODO  padding problem.
+    ans = torch.stack(tuple(tensor_track),dim=0)
+    print(ans.shape)
+    return ans
+
+
+def four_hot_encoding(track_dict):
+    """
+    A four hot encoding for tracks. Be careful.
+    See concept at https://arxiv.org/abs/1506.02216
+    :param track_dict:
+    :return: Tensor:[attribute, dataset,time]
+    """
+    ans = []
+    # TODO implement four-hot encoding
+    return ans
+
+
+def data_preprocessing(raw_data, unused_attribute=None, use_four_hot_encoding=False):
     """
     preprocessing track dataset by mmsi.
     raw_data is initially a list of logs with mmsi, after preprocessing there will be no mmsi info to prevent
@@ -74,11 +113,11 @@ def data_preprocessing(raw_data, unused_attribute=None, four_hot_encoding=False)
 
     NOTICE
     downsampling is set to 10 mins by default.
-    :param four_hot_encoding: set True to replace normalization with four-hot encoding.
+    :param use_four_hot_encoding: set True to replace normalization with four-hot encoding.
     :param unused_attribute: unnecessary attribute "heading" (index=5) for four-hot encoding. can introduce others by list.
     :param raw_data: a numpy ndarray which contains all logs retrieved from ais.
             [ [mmsi,lat,lon,sog,cog,heading,timestamp],.. ]
-    :return: Tensor:[attribute size, dataset size,time size]
+    :return: Tensor:[attribute, dataset,time]
     """
     if unused_attribute is None:
         unused_attribute = [5]
@@ -97,12 +136,16 @@ def data_preprocessing(raw_data, unused_attribute=None, four_hot_encoding=False)
         del_flag = delete_bad_tracks(track_dict[k], k)
         if del_flag:
             trash_list.append(k)
-        else:
-            track_dict[k] = normalization(track_dict[k], k)
 
     for mmsi in trash_list:
         del track_dict[mmsi]
 
-    print(f"there are {len(track_dict.keys())} tracks left after preprocessing.")
-    for
-    return track_dict
+    # the last part of preprocess to generate a valid dataset.
+    if use_four_hot_encoding:
+        ans = four_hot_encoding(track_dict)
+    else:
+        ans = normalization(track_dict)
+
+    print(f"there are {len(ans)} tracks left after preprocessing.")
+
+    return ans

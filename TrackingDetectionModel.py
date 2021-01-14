@@ -31,7 +31,6 @@ class TrackingDetectionModel:
         """
          init service with all hyper-params
         :param cfg: see config.py
-        :param raw: raw data
         """
         # set hyperparameters
         self.x_dim = cfg.x_dim
