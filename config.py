@@ -33,7 +33,7 @@ LON_MAX = 180
 LAT_RANGE = LAT_MAX - LAT_MIN
 LON_RANGE = LON_MAX - LON_MIN
 # speed, unit is knots
-SOG_MIN = 3
+SOG_MIN = 1
 SOG_MAX = 30.0
 # course, unit is degree
 COG_MIN = 0

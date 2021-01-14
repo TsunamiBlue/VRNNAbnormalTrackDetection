@@ -221,7 +221,7 @@ if __name__ == '__main__':
         TDModel.train_from_scratch(output_path=cfgs.MODEL_DATA_PATH)
     else:
         # ty w/ ais dataset
-        ais_data = np.loadtxt(os.path.join(cfgs.TRAINING_DATA_PATH, '202012.txt'), delimiter=',')
+        ais_data = np.loadtxt(os.path.join(cfgs.TRAINING_DATA_PATH, 'data202012.txt'), delimiter=',')
         ais_data = data_preprocessing(ais_data)
         ais_dataset = AISDataset(ais_data)
         TDModel = TrackingDetectionModel(cfgs)
