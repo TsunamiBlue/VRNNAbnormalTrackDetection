@@ -55,7 +55,6 @@ class TrackingDetectionModel:
         # init vrnn models
         self.model = VRNN(self.x_dim, self.h_dim, self.z_dim, self.n_layers)
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
-        print("DONE.")
 
     def generate_dataloader(self, raw, already_loaded=False):
         """
@@ -225,8 +224,8 @@ if __name__ == '__main__':
         ais_dataset = AISDataset(ais_data)
         TDModel = TrackingDetectionModel(cfgs)
         TDModel.generate_dataloader(raw=ais_dataset)
-        # print(TDModel.train_loader.dataset.shape)
-        # TDModel.train_from_scratch(output_path=cfgs.MODEL_DATA_PATH)
+        print(TDModel.train_loader.dataset.shape)
+        TDModel.train_from_scratch(output_path=cfgs.MODEL_DATA_PATH)
 
     # predictions = [TDModel.model(trans(data)) for i,(data,_) in enumerate(test_loader)]
     # print(predictions)

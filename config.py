@@ -10,14 +10,14 @@ import os
 
 # hyperparameters
 
-x_dim = 1
+x_dim = 4
 h_dim = 100
-z_dim = 16
+z_dim = 1
 n_layers = 1
 n_epochs = 10
 clip = 10
 learning_rate = 1e-3
-batch_size = 128
+batch_size = 2
 fix_seed = 128
 print_every = 100
 save_every = 10

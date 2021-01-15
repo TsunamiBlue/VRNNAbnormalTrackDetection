@@ -59,33 +59,41 @@ def delete_bad_tracks(tracks: list, mmsi, period_threshold=14400, anchor_ratio=0
         if cfgs.SOG_MAX < log[2]:
             return True
     # print(f"{mmsi} has ratio {float(counter / track_length)}")
-    if float(counter/track_length) > anchor_ratio:
+    if float(counter / track_length) > anchor_ratio:
         return True
 
 
-def normalization(track_dict,backward_padding=True):
+def normalization(track_dict, backward_padding=True):
     """
     A standard normalization for tracks. config should have boundary info.
 
-    :param backward_padding:
+    :param backward_padding: padding by the last log in each track
     :param track_dict: mmsi as key, the array of the rest info as value.
     :return: Tensor:[attribute, dataset,time]
     """
     ans = torch.Tensor()
-    tensor_track = []
+    track_list = []
+    max_len_track = 0
     for each_track in track_dict.values():
         datapoint = []
         for log in each_track:
-            lat_normalized = (log[0]-cfgs.LAT_MIN)/(cfgs.LAT_MAX-cfgs.LAT_MIN)
-            lon_normalized = (log[1]-cfgs.LON_MIN)/(cfgs.LON_MAX-cfgs.LON_MIN)
-            speed_normalized = (log[2]-cfgs.SOG_MIN)/(cfgs.SOG_MAX-cfgs.SOG_MIN)
-            course_normalized = (log[3]-cfgs.COG_MIN)/(cfgs.COG_MAX-cfgs.COG_MIN)
-            single = torch.Tensor([lat_normalized,lon_normalized,speed_normalized,course_normalized])
+            lat_normalized = (log[0] - cfgs.LAT_MIN) / (cfgs.LAT_MAX - cfgs.LAT_MIN)
+            lon_normalized = (log[1] - cfgs.LON_MIN) / (cfgs.LON_MAX - cfgs.LON_MIN)
+            speed_normalized = (log[2] - 0) / (cfgs.SOG_MAX - 0)
+            course_normalized = (log[3] - cfgs.COG_MIN) / (cfgs.COG_MAX - cfgs.COG_MIN)
+            single = torch.Tensor([lat_normalized, lon_normalized, speed_normalized, course_normalized])
             datapoint.append(single)
-        tensor_track.append(torch.stack(tuple(datapoint),dim=0))
-        print(tensor_track)
-    # TODO  padding problem.
-    ans = torch.stack(tuple(tensor_track),dim=0)
+        if len(datapoint) > max_len_track:
+            max_len_track = len(datapoint)
+        track_list.append(torch.stack(tuple(datapoint), dim=0))
+    if backward_padding:
+        for index, each_track in enumerate(track_list):
+            current_len_track = len(each_track)
+            if current_len_track != max_len_track:
+                patch = each_track[-1].repeat(max_len_track - current_len_track, 1)
+                track_list[index] = torch.cat((track_list[index], patch), dim=0)
+
+    ans = torch.stack(tuple(track_list), dim=0)
     print(ans.shape)
     return ans
 
