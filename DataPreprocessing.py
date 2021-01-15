@@ -69,7 +69,7 @@ def normalization(track_dict, backward_padding=True):
 
     :param backward_padding: padding by the last log in each track
     :param track_dict: mmsi as key, the array of the rest info as value.
-    :return: Tensor:[attribute, dataset,time]
+    :return: Tensor:[dataset, time, attribute]
     """
     ans = torch.Tensor()
     track_list = []
@@ -94,7 +94,8 @@ def normalization(track_dict, backward_padding=True):
                 track_list[index] = torch.cat((track_list[index], patch), dim=0)
 
     ans = torch.stack(tuple(track_list), dim=0)
-    print(ans.shape)
+    # ans = ans.transpose(0, 1)
+    # print(ans.shape)
     return ans
 
 

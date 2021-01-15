@@ -14,6 +14,7 @@ import os
 import numpy as np
 from collections import defaultdict
 from DataPreprocessing import data_preprocessing
+import torchsummary as ts
 
 """
     A tracking detection model using VRNN as the core algorithm based on Pytorch.
@@ -100,6 +101,7 @@ class TrackingDetectionModel:
         :param: n_epochs:int, you can change the number of epochs before training.
         :return:
         """
+        print("Start training from scratch...")
         for epoch in range(1, self.n_epochs + 1):
             self.train_one_epoch(epoch)
             self.validate_current_epoch(epoch)
@@ -123,7 +125,6 @@ class TrackingDetectionModel:
             # data = Variable(data)
             # to remove eventually
             data = Variable(data[0].squeeze())
-            print(data.shape)
             data = (data - data.min().data.item()) / (data.max().data.item() - data.min().data.item())
             print(data.shape)
             # forward, backward, optimize
@@ -199,8 +200,7 @@ class AISDataset(torch.utils.data.Dataset):
 
 if __name__ == '__main__':
     plt.ion()
-    flag = False
-    # flag = True
+    flag = cfgs.TEST_FLAG
     # test model with mnist
     if flag:
         train_loader = torch.utils.data.DataLoader(

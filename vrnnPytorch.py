@@ -86,6 +86,13 @@ class VRNN(nn.Module):
 			phi_x_t = self.phi_x(x[t])
 
 			#encoder
+			print(f"phi_x_t {phi_x_t.shape}")
+			print(f"h[-1] {h[-1].shape}")
+			print(f"cat {torch.cat([phi_x_t, h[-1]],1).shape}")
+			print(f"phi_x_t v {phi_x_t[0][0]}")
+			print(f"h[-1] v {h[-1][0][0]}")
+			print(f"cat v {torch.cat([phi_x_t, h[-1]], 1)[0][0]}")
+			print()
 			enc_t = self.enc(torch.cat([phi_x_t, h[-1]], 1))
 			enc_mean_t = self.enc_mean(enc_t)
 			enc_std_t = self.enc_std(enc_t)

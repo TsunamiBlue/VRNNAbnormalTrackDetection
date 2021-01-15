@@ -8,16 +8,19 @@ anythingbuttusnami@gmail.com
 """
 import os
 
+# FLAG BETWEEN MNIST OR AIS
+TEST_FLAG = True
+
 # hyperparameters
 
-x_dim = 4
+x_dim = 28
 h_dim = 100
-z_dim = 1
+z_dim = 16
 n_layers = 1
 n_epochs = 10
 clip = 10
 learning_rate = 1e-3
-batch_size = 2
+batch_size = 3
 fix_seed = 128
 print_every = 100
 save_every = 10
