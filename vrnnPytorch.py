@@ -7,13 +7,16 @@ from torchvision import datasets, transforms
 from torch.autograd import Variable
 import matplotlib.pyplot as plt
 
-
 """implementation of the Variational Recurrent
 Neural Network (VRNN) from https://arxiv.org/abs/1506.02216
 using unimodal isotropic gaussian distributions for 
 inference, prior, and generating models.
 	original source from: https://github.com/emited/VariationalRecurrentNeuralNetwork
 """
+
+
+def get_features_hook(module, input, output):
+	print("hook", output.data.cpu().size())
 
 
 class VRNN(nn.Module):
@@ -25,7 +28,7 @@ class VRNN(nn.Module):
 		self.z_dim = z_dim
 		self.n_layers = n_layers
 
-		#feature-extracting transformations
+		# feature-extracting transformations
 		self.phi_x = nn.Sequential(
 			nn.Linear(x_dim, h_dim),
 			nn.ReLU(),
@@ -34,8 +37,9 @@ class VRNN(nn.Module):
 		self.phi_z = nn.Sequential(
 			nn.Linear(z_dim, h_dim),
 			nn.ReLU())
-
-		#encoder
+		# test hook for phi_x
+		phi_x_hook = list(self.phi_x.children())[0].register_forward_hook(get_features_hook)
+		# encoder
 		self.enc = nn.Sequential(
 			nn.Linear(h_dim + h_dim, h_dim),
 			nn.ReLU(),
@@ -46,7 +50,7 @@ class VRNN(nn.Module):
 			nn.Linear(h_dim, z_dim),
 			nn.Softplus())
 
-		#prior
+		# prior
 		self.prior = nn.Sequential(
 			nn.Linear(h_dim, h_dim),
 			nn.ReLU())
@@ -55,7 +59,7 @@ class VRNN(nn.Module):
 			nn.Linear(h_dim, z_dim),
 			nn.Softplus())
 
-		#decoder
+		# decoder
 		self.dec = nn.Sequential(
 			nn.Linear(h_dim + h_dim, h_dim),
 			nn.ReLU(),
@@ -64,59 +68,58 @@ class VRNN(nn.Module):
 		self.dec_std = nn.Sequential(
 			nn.Linear(h_dim, x_dim),
 			nn.Softplus())
-		#self.dec_mean = nn.Linear(h_dim, x_dim)
+		# self.dec_mean = nn.Linear(h_dim, x_dim)
 		self.dec_mean = nn.Sequential(
 			nn.Linear(h_dim, x_dim),
 			nn.Sigmoid())
 
-		#recurrence
+		# recurrence
 		self.rnn = nn.GRU(h_dim + h_dim, h_dim, n_layers, bias)
 
-
 	def forward(self, x):
-
 		all_enc_mean, all_enc_std = [], []
 		all_dec_mean, all_dec_std = [], []
 		kld_loss = 0
 		nll_loss = 0
 
 		h = Variable(torch.zeros(self.n_layers, x.size(1), self.h_dim))
+		print(f"x.size() {x.size()}")
 		for t in range(x.size(0)):
-
 			phi_x_t = self.phi_x(x[t])
 
-			#encoder
+			# encoder
+			print(f"phi_x {list(self.phi_x.children())}")
 			print(f"phi_x_t {phi_x_t.shape}")
 			print(f"h[-1] {h[-1].shape}")
-			print(f"cat {torch.cat([phi_x_t, h[-1]],1).shape}")
-			print(f"phi_x_t v {phi_x_t[0][0]}")
-			print(f"h[-1] v {h[-1][0][0]}")
-			print(f"cat v {torch.cat([phi_x_t, h[-1]], 1)[0][0]}")
+			print(f"cat {torch.cat([phi_x_t, h[-1]], 1).shape}")
+			# # print(f"phi_x_t v {phi_x_t[0][0]}")
+			# # print(f"h[-1] v {h[-1][0][0]}")
+			# # print(f"cat v {torch.cat([phi_x_t, h[-1]], 1)[0][0]}")
 			print()
 			enc_t = self.enc(torch.cat([phi_x_t, h[-1]], 1))
 			enc_mean_t = self.enc_mean(enc_t)
 			enc_std_t = self.enc_std(enc_t)
 
-			#prior
+			# prior
 			prior_t = self.prior(h[-1])
 			prior_mean_t = self.prior_mean(prior_t)
 			prior_std_t = self.prior_std(prior_t)
 
-			#sampling and reparameterization
+			# sampling and reparameterization
 			z_t = self._reparameterized_sample(enc_mean_t, enc_std_t)
 			phi_z_t = self.phi_z(z_t)
 
-			#decoder
+			# decoder
 			dec_t = self.dec(torch.cat([phi_z_t, h[-1]], 1))
 			dec_mean_t = self.dec_mean(dec_t)
 			dec_std_t = self.dec_std(dec_t)
 
-			#recurrence
+			# recurrence
 			_, h = self.rnn(torch.cat([phi_x_t, phi_z_t], 1).unsqueeze(0), h)
 
-			#computing losses
+			# computing losses
 			kld_loss += self._kld_gauss(enc_mean_t, enc_std_t, prior_mean_t, prior_std_t)
-			#nll_loss += self._nll_gauss(dec_mean_t, dec_std_t, x[t])
+			# nll_loss += self._nll_gauss(dec_mean_t, dec_std_t, x[t])
 			nll_loss += self._nll_bernoulli(dec_mean_t, x[t])
 
 			all_enc_std.append(enc_std_t)
@@ -125,9 +128,8 @@ class VRNN(nn.Module):
 			all_dec_std.append(dec_std_t)
 
 		return kld_loss, nll_loss, \
-			(all_enc_mean, all_enc_std), \
-			(all_dec_mean, all_dec_std)
-
+				(all_enc_mean, all_enc_std), \
+				(all_dec_mean, all_dec_std)
 
 	def sample(self, seq_len):
 
@@ -135,39 +137,31 @@ class VRNN(nn.Module):
 
 		h = Variable(torch.zeros(self.n_layers, 1, self.h_dim))
 		for t in range(seq_len):
-
-			#prior
+			# prior
 			prior_t = self.prior(h[-1])
 			prior_mean_t = self.prior_mean(prior_t)
 			prior_std_t = self.prior_std(prior_t)
 
-			#sampling and reparameterization
+			# sampling and reparameterization
 			z_t = self._reparameterized_sample(prior_mean_t, prior_std_t)
 			phi_z_t = self.phi_z(z_t)
 
-			#decoder
+			# decoder
 			dec_t = self.dec(torch.cat([phi_z_t, h[-1]], 1))
 			dec_mean_t = self.dec_mean(dec_t)
-			#dec_std_t = self.dec_std(dec_t)
+			# dec_std_t = self.dec_std(dec_t)
 
 			phi_x_t = self.phi_x(dec_mean_t)
 
-			#recurrence
+			# recurrence
 			_, h = self.rnn(torch.cat([phi_x_t, phi_z_t], 1).unsqueeze(0), h)
 
 			sample[t] = dec_mean_t.data
 
 		return sample
 
-
-	def reset_parameters(self, stdv=1e-1):
-		for weight in self.parameters():
-			weight.data.normal_(0, stdv)
-
-
 	def _init_weights(self, stdv):
 		pass
-
 
 	def _reparameterized_sample(self, mean, std):
 		"""using std to sample"""
@@ -175,20 +169,17 @@ class VRNN(nn.Module):
 		eps = Variable(eps)
 		return eps.mul(std).add_(mean)
 
-
 	def _kld_gauss(self, mean_1, std_1, mean_2, std_2):
 		"""Using std to compute KLD"""
 		eps = torch.finfo(torch.float32).eps
-		kld_element =  (2 * torch.log(std_2+eps) - 2 * torch.log(std_1+eps) +
-			(std_1.pow(2) + (mean_1 - mean_2).pow(2)) /
-			std_2.pow(2) - 1)
-		return	0.5 * torch.sum(kld_element)
-
+		kld_element = (2 * torch.log(std_2 + eps) - 2 * torch.log(std_1 + eps) +
+						(std_1.pow(2) + (mean_1 - mean_2).pow(2)) /
+						std_2.pow(2) - 1)
+		return 0.5 * torch.sum(kld_element)
 
 	def _nll_bernoulli(self, theta, x):
 		eps = torch.finfo(torch.float32).eps
-		return - torch.sum(x*torch.log(theta+eps) + (1-x)*torch.log(1-theta+eps))
-
+		return - torch.sum(x * torch.log(theta + eps) + (1 - x) * torch.log(1 - theta + eps))
 
 	def _nll_gauss(self, mean, std, x):
 		pass

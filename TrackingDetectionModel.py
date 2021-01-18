@@ -120,16 +120,10 @@ class TrackingDetectionModel:
         """
         train_loss = 0
         for batch_idx, data in enumerate(self.train_loader):
-            # print(data)
-            # transforming data
-            # data = Variable(data)
-            # to remove eventually
-            data = Variable(data[0].squeeze())
-            data = (data - data.min().data.item()) / (data.max().data.item() - data.min().data.item())
-            print(data.shape)
             # forward, backward, optimize
             self.optimizer.zero_grad()
             kld_loss, nll_loss, enc_log, dec_log = self.model(data)
+            # print(list(self.model.children())[0])
             loss = kld_loss + nll_loss
             loss.backward()
 
@@ -162,11 +156,8 @@ class TrackingDetectionModel:
         :return:
         """
         mean_kld_loss, mean_nll_loss = 0, 0
-        for i, (data, _) in enumerate(self.test_loader):
-            # data = Variable(data)
-            data = Variable(data.squeeze().transpose(0, 1))
-            data = (data - data.min().data.item()) / (data.max().data.item() - data.min().data.item())
-
+        for batch_idx, data in enumerate(self.test_loader):
+            # validating
             kld_loss, nll_loss, _, _ = self.model(data)
             mean_kld_loss += kld_loss.data.item()
             mean_nll_loss += nll_loss.data.item()
