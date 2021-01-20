@@ -1,3 +1,8 @@
+"""
+THIS FILE IS UNNECESSARY AND CAN BE REMOVED.
+
+"""
+
 import torch
 import torch.nn as nn
 import matplotlib.pyplot as plt

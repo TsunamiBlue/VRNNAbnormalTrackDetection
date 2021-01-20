@@ -8,14 +8,12 @@ anythingbuttusnami@gmail.com
 """
 import os
 
-# FLAG BETWEEN MNIST OR AIS
-TEST_FLAG = False
 
 # hyperparameters
 
 x_dim = 4
 h_dim = 100
-z_dim = 16
+z_dim = 1
 n_layers = 1
 n_epochs = 10
 clip = 10

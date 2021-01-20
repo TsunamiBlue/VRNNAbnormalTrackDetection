@@ -12,9 +12,9 @@ import config as cfgs
 from sklearn.model_selection import train_test_split
 import os
 import numpy as np
-from collections import defaultdict
 from DataPreprocessing import data_preprocessing
 import torchsummary as ts
+import warnings
 
 """
     A tracking detection model using VRNN as the core algorithm based on Pytorch.
@@ -95,22 +95,54 @@ class TrackingDetectionModel:
         # activate plotting
         plt.ion()
 
-    def train_from_scratch(self, output_path=None):
+    def train_from_scratch(self, output_path=None, inner_invoking=False):
         """
         zero-knowledge in this area and train model from scratch with training set.
-        :param: n_epochs:int, you can change the number of epochs before training.
-        :return:
+        NOTICE: all configs for training should be specified in config.py
+        :param: output_path: path str
+        :param: inner_invoking: invoked from train_after_backbone.
+        :return: None
         """
-        print("Start training from scratch...")
+        if output_path is None:
+            warnings.warn("Warning: output path not specified.")
+            return
+        if not inner_invoking:
+            print("Start training from scratch...")
         for epoch in range(1, self.n_epochs + 1):
             self.train_one_epoch(epoch)
             self.validate_current_epoch(epoch)
 
         # save model to given path
-        if output_path is not None:
-            path = os.path.join(output_path, 'vrnn_state_dict_test.pth')
-            torch.save(self.model.state_dict(), path)
+        path = os.path.join(output_path, 'vrnn_state_dict_test.pth')
+        torch.save(self.model.state_dict(), path)
+        if not inner_invoking:
             print(f"DONE. Saved model at {path}")
+        else:
+            print(f"DONE. Updated model at {path}")
+
+
+    def train_after_backbone(self, saved_model_path=None, output_path=None):
+        """
+        Update the model with pretrained params.
+        NOTICE: all configs should be specified in config.py
+        :param saved_model_path: path str
+        :param output_path: path str
+        :return: None
+        """
+        if saved_model_path is None:
+            warnings.warn('Warning: saved model path not specified')
+            return
+
+        if output_path is None:
+            warnings.warn("Warning: output path not specified")
+            return
+        print("Start train with specified pretrained model...")
+        loaded_params = torch.load(saved_model_path)
+        self.model.load_state_dict(loaded_params)
+
+        self.train_from_scratch(output_path=output_path)
+
+
 
     def train_one_epoch(self, epoch):
         """
@@ -153,7 +185,7 @@ class TrackingDetectionModel:
         """
         Evaluation based on both KL-Divergence and Negative Log Likelihood loss
         :param epoch: Int
-        :return:
+        :return: None
         """
         mean_kld_loss, mean_nll_loss = 0, 0
         for batch_idx, data in enumerate(self.test_loader):
@@ -185,38 +217,3 @@ class AISDataset(torch.utils.data.Dataset):
     def __len__(self):
         return len(self.raw_data)
 
-
-
-
-
-if __name__ == '__main__':
-    plt.ion()
-    flag = cfgs.TEST_FLAG
-    # test model with mnist
-    if flag:
-        train_loader = torch.utils.data.DataLoader(
-            datasets.MNIST('data', train=True, download=True,
-                           transform=transforms.ToTensor()),
-            batch_size=cfgs.batch_size, shuffle=True)
-        print(datasets.MNIST('data', train=False,
-                             transform=transforms.ToTensor()).data.shape)
-        test_loader = torch.utils.data.DataLoader(
-            datasets.MNIST('data', train=False,
-                           transform=transforms.ToTensor()),
-            batch_size=cfgs.batch_size, shuffle=True)
-        mnist_data = (train_loader, test_loader)
-        TDModel = TrackingDetectionModel(cfgs)
-        TDModel.generate_dataloader(raw=mnist_data, already_loaded=True)
-        TDModel.train_from_scratch(output_path=cfgs.MODEL_DATA_PATH)
-    else:
-        # ty w/ ais dataset
-        ais_data = np.loadtxt(os.path.join(cfgs.TRAINING_DATA_PATH, 'data202012.txt'), delimiter=',')
-        ais_data = data_preprocessing(ais_data)
-        ais_dataset = AISDataset(ais_data)
-        TDModel = TrackingDetectionModel(cfgs)
-        TDModel.generate_dataloader(raw=ais_dataset)
-        print(TDModel.train_loader.dataset.shape)
-        TDModel.train_from_scratch(output_path=cfgs.MODEL_DATA_PATH)
-
-    # predictions = [TDModel.model(trans(data)) for i,(data,_) in enumerate(test_loader)]
-    # print(predictions)

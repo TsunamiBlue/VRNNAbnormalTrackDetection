@@ -107,6 +107,7 @@ class VRNN(nn.Module):
 			# sampling and reparameterization
 			z_t = self._reparameterized_sample(enc_mean_t, enc_std_t)
 			phi_z_t = self.phi_z(z_t)
+			print(f"z_t.size() {z_t.size()}")
 			print(f"phi_z_t {phi_z_t.size()}")
 			print()
 
