@@ -15,6 +15,7 @@ inference, prior, and generating models.
 """
 
 
+# helper methods for hooks
 def get_features_hook(module, input, output):
 	print("hook", output.data.cpu().size())
 
@@ -37,8 +38,9 @@ class VRNN(nn.Module):
 		self.phi_z = nn.Sequential(
 			nn.Linear(z_dim, h_dim),
 			nn.ReLU())
-		# test hook for phi_x
+		# test hook for phis
 		# phi_x_hook = list(self.phi_x.children())[0].register_forward_hook(get_features_hook)
+		# phi_z_hook = list(self.phi_z.children())[0].register_forward_hook(get_features_hook)
 		# encoder
 		self.enc = nn.Sequential(
 			nn.Linear(h_dim + h_dim, h_dim),
@@ -83,7 +85,7 @@ class VRNN(nn.Module):
 		nll_loss = 0
 
 		h = Variable(torch.zeros(self.n_layers, x.size(1), self.h_dim))
-		print(f"x.size() {x.size()}")
+		# print(f"x.size() {x.size()}")
 		for t in range(x.size(0)):
 			phi_x_t = self.phi_x(x[t])
 

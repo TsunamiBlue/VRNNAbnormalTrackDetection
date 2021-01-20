@@ -11,6 +11,7 @@ import os
 
 # hyperparameters
 
+# x dim is the same size as [LAT,LON,SOG,COG]
 x_dim = 4
 h_dim = 100
 z_dim = 1

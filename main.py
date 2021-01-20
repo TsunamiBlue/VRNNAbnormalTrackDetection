@@ -8,10 +8,11 @@ from DataPreprocessing import data_preprocessing
 
 
 """
-It's a local main function to instruct how to use this model.
+It's a local main method to instruct how to use this model.
 """
 if __name__ == '__main__':
-    plt.ion()
+    # uncomment it to visualize attention
+    # plt.ion()
     # ty w/ ais dataset
     ais_data = np.loadtxt(os.path.join(cfgs.TRAINING_DATA_PATH, 'data202012.txt'), delimiter=',')
     ais_data = data_preprocessing(ais_data)
