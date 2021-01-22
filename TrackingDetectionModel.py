@@ -23,6 +23,23 @@ import warnings
 """
 
 
+class AISDataset(torch.utils.data.Dataset):
+    """
+    a toy dataset class for ais data.
+    """
+
+    def __init__(self, datapoints):
+        super().__init__()
+        self.data = datapoints
+        self.shape = datapoints.shape
+
+    def __getitem__(self, idx):
+        return self.data[idx]
+
+    def __len__(self):
+        return len(self.data)
+
+
 class TrackingDetectionModel:
     """
     A deep learning class, all in one.
@@ -49,17 +66,25 @@ class TrackingDetectionModel:
         self.seed = None
         # please transmit data before training!
         self.raw_data = None
+        self.abnormal = None
         self.train_loader = None
         self.test_loader = None
+        # boundary info
+        self.lat_max = cfg.LAT_MAX
+        self.lat_min = cfg.LAT_MIN
+        self.lat_range = cfg.LAT_MAX-cfg.LAT_MIN
+        self.lon_max = cfg.LON_MAX
+        self.lon_min = cfg.LON_MIN
+        self.lon_range = cfg.LON_MAX - cfg.LON_MIN
 
         print("initializing vrnn model...")
         # init vrnn models
         self.model = VRNN(self.x_dim, self.h_dim, self.z_dim, self.n_layers)
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
 
-    def generate_dataloader(self, raw, already_loaded=False):
+    def generate_dataloader(self, raw: AISDataset, already_loaded=False):
         """
-        :param:raw: A sequence of data for model, or with already_loaded True, input a tuple of two already generated
+        :param:raw: AISDataset for model, or with already_loaded True, input a tuple of two already generated
                     Torch.utils.data.TensorDataset for training and testing set in order.
         :return: None
         """
@@ -92,7 +117,7 @@ class TrackingDetectionModel:
         self.seed = seed
 
     def plot_activate(self):
-        # activate plotting
+        # activate plotting while training
         plt.ion()
 
     def train_from_scratch(self, output_path=None, inner_invoking=False):
@@ -120,7 +145,6 @@ class TrackingDetectionModel:
         else:
             print(f"DONE. Updated model at {path}")
 
-
     def train_after_backbone(self, saved_model_path=None, output_path=None):
         """
         Update the model with pretrained params.
@@ -141,8 +165,6 @@ class TrackingDetectionModel:
         self.model.load_state_dict(loaded_params)
 
         self.train_from_scratch(output_path=output_path)
-
-
 
     def train_one_epoch(self, epoch):
         """
@@ -200,20 +222,27 @@ class TrackingDetectionModel:
         print('====> Test set loss: KLD Loss = {:.4f}, NLL Loss = {:.4f} '.format(
             mean_kld_loss, mean_nll_loss))
 
+    def plot_track(self,normal_tracks=None, abnormal_tracks=None):
+        """
+        :param abnormal_tracks: if None use model data
+        :param normal_tracks: if None use model data
+	    """
+        # TODO data should come from model class
+        print(normal_tracks.size())
+        cmap = plt.cm.get_cmap("Blues")
+        normal_size = len(normal_tracks)
+        print(normal_size)
+        for idx, track_tensor in enumerate(normal_tracks):
+            c = cmap(float(idx)/(normal_size-1))
+            v_lat = track_tensor[:, 0] * self.lat_range + self.lat_min
+            v_lon = track_tensor[:, 1] * self.lon_range + self.lon_min
+            plt.plot(v_lon, v_lat, color=c, linewidth=0.8)
+        plt.xlim([self.lon_min, self.lon_max])
+        plt.ylim([self.lat_min, self.lat_max])
+        plt.xlabel("Longitude")
+        plt.ylabel("Latitude")
+        plt.tight_layout()
+        plt.show()
 
-class AISDataset(torch.utils.data.Dataset):
-    """
-    a dataset class for ais data.
-    """
 
-    def __init__(self, datapoints):
-        super().__init__()
-        self.raw_data = datapoints
-        self.shape = datapoints.shape
-
-    def __getitem__(self, idx):
-        return self.raw_data[idx]
-
-    def __len__(self):
-        return len(self.raw_data)
 

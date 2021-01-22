@@ -11,7 +11,7 @@ import os
 import numpy as np
 
 if __name__ == '__main__':
-    plt.ion()
+    # plt.ion()
     test_model_path = os.path.join(cfgs.MODEL_DATA_PATH, "vrnn_state_dict_test.pth")
     test_data_path = os.path.join(cfgs.TRAINING_DATA_PATH, 'data202012.txt')
     your_dirty_dataset = []
@@ -36,8 +36,8 @@ if __name__ == '__main__':
     print(f"totally {len(your_dirty_dataset)} points.")
     # print(your_dirty_dataset[:][0])
     # print(X)
-    X = np.random.normal(5.0, 1.0, 3)
-    Y = np.random.normal(5.0, 1.0, 3)
+    # X = np.random.normal(5.0, 1.0, 3)
+    # Y = np.random.normal(5.0, 1.0, 3)
     plt.scatter(X, Y)
     plt.show()
     input()
