@@ -5,15 +5,13 @@ import torch.utils
 import torch.utils.data
 from torchvision import datasets, transforms
 from torch.autograd import Variable
-# import matplotlib
 from matplotlib import pyplot as plt
 from vrnnPytorch import VRNN
 import config as cfgs
 from sklearn.model_selection import train_test_split
 import os
 import numpy as np
-from DataPreprocessing import data_preprocessing
-import torchsummary as ts
+from scipy import stats
 import warnings
 
 """
@@ -45,7 +43,7 @@ class TrackingDetectionModel:
     A deep learning class, all in one.
     """
 
-    def __init__(self, cfg, abnormal=None):
+    def __init__(self, cfg, abnormal=[]):
         """
          init service with all hyper-params
         :param cfg: see config.py
@@ -240,8 +238,25 @@ class TrackingDetectionModel:
 
         return self.model.sample(track_num)
 
+    def abnormal_detection(self, test_data: torch.Tensor):
+        """
+        abnormal detection method
+        :param test_data: track Tensor
+        :return: True if it's an abnormal track
+        """
+        test_data = test_data.unsqueeze(0)
+        kld_loss, nll_loss, (all_enc_mean, all_enc_std), (all_dec_mean, all_dec_std) = self.model(test_data)
+        print(f" kld_loss {kld_loss} \t nll_loss {nll_loss}\t")
+        print(f" all_enc_mean {all_enc_mean[0].size()} \t all_enc_std {all_enc_std[0].size()}")
+        print(f" all_dec_mean {all_dec_mean[0].size()} \t all_dec_std {all_dec_std[0].size()}")
+        self.abnormal.append(test_data.squeeze(0))
+        return True
+
+
     def plot_track(self, normal_tracks=None, abnormal_tracks=None):
         """
+        # TODO re-write plot method.
+        scratch plotting method, should be polished later.
         :param abnormal_tracks: if None will not output abnormal tracks
         :param normal_tracks: if None use model data, [number of tracks, sample points, attribute]
 	    """

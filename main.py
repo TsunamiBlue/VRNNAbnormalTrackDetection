@@ -22,4 +22,6 @@ if __name__ == '__main__':
     print(TDModel.train_loader.dataset.shape)
     TDModel.train_from_scratch(output_path=cfgs.MODEL_DATA_PATH)
     # TDModel.plot_track()
-    smp = TDModel.sample_track(287)
+    # smp = TDModel.sample_track(287)
+    # print(ais_data[0].size())
+    TDModel.abnormal_detection(ais_data[0])

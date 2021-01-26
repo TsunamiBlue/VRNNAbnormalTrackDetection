@@ -130,7 +130,6 @@ class VRNN(nn.Module):
 				(all_enc_mean, all_enc_std), \
 				(all_dec_mean, all_dec_std)
 
-	# TODO make this method stable for ais data.
 	def sample(self, seq_len):
 
 		sample = torch.zeros(seq_len, self.x_dim)
