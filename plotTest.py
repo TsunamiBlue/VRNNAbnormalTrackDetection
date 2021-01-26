@@ -28,7 +28,10 @@ plot and save for existing track dicts.
 ais_data = np.loadtxt(os.path.join(cfgs.TRAINING_DATA_PATH, 'data202012.txt'), delimiter=',')
 ais_data = data_preprocessing(ais_data)
 ais_dataset = AISDataset(ais_data)
+# print(ais_data.size())
+test_abnormal = ais_data[[-2,-1],:,:]
+print(test_abnormal.size())
 TDModel = TrackingDetectionModel(cfgs)
 TDModel.generate_dataloader(raw=ais_dataset)
 # print(TDModel.train_loader.dataset.shape)
-TDModel.plot_track(ais_data,None)
+TDModel.plot_track(ais_data, test_abnormal)

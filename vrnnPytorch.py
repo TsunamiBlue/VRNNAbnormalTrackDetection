@@ -90,13 +90,6 @@ class VRNN(nn.Module):
 			phi_x_t = self.phi_x(x[t])
 
 			# encoder
-			# print(f"phi_x {list(self.phi_x.children())}")
-			# print(f"phi_x_t {phi_x_t.shape}")
-			# print(f"h[-1] {h[-1].shape}")
-			# print(f"cat {torch.cat([phi_x_t, h[-1]], 1).shape}")
-			# # print(f"phi_x_t v {phi_x_t[0][0]}")
-			# # print(f"h[-1] v {h[-1][0][0]}")
-			# # print(f"cat v {torch.cat([phi_x_t, h[-1]], 1)[0][0]}")
 			enc_t = self.enc(torch.cat([phi_x_t, h[-1]], 1))
 			enc_mean_t = self.enc_mean(enc_t)
 			enc_std_t = self.enc_std(enc_t)
@@ -109,9 +102,11 @@ class VRNN(nn.Module):
 			# sampling and reparameterization
 			z_t = self._reparameterized_sample(enc_mean_t, enc_std_t)
 			phi_z_t = self.phi_z(z_t)
-			print(f"z_t.size() {z_t.size()}")
-			print(f"phi_z_t {phi_z_t.size()}")
-			print()
+			# print(f"z_t.size() {z_t.size()}")
+			# print(f"phi_z_t {phi_z_t.size()}")
+			# print(f"phi_x_t {phi_x_t.size()}")
+			# print(f"measure {sum(phi_x_t[0,:])}")
+			# print()
 
 			# decoder
 			dec_t = self.dec(torch.cat([phi_z_t, h[-1]], 1))

@@ -45,10 +45,11 @@ class TrackingDetectionModel:
     A deep learning class, all in one.
     """
 
-    def __init__(self, cfg):
+    def __init__(self, cfg, abnormal=None):
         """
          init service with all hyper-params
         :param cfg: see config.py
+        :param abnormal: can specify abnormal tracks from outer resources.
         """
         # set hyperparameters
         self.x_dim = cfg.x_dim
@@ -66,9 +67,12 @@ class TrackingDetectionModel:
         self.seed = None
         # please transmit data before training!
         self.raw_data = None
-        self.abnormal = None
+        self.abnormal = abnormal
         self.train_loader = None
         self.test_loader = None
+        # sample granularity & downsample size
+        self.sample_granularity = cfg.downsample_interval
+        self.single_track_len = None
         # boundary info
         self.lat_max = cfg.LAT_MAX
         self.lat_min = cfg.LAT_MIN
@@ -94,9 +98,10 @@ class TrackingDetectionModel:
         if already_loaded:
             self.train_loader = raw[0]
             self.test_loader = raw[1]
+            self.single_track_len = self.train_loader.dataset[0].size()[0]
         else:
             (training_data, test_data) = train_test_split(self.raw_data, test_size=self.split_ratio)
-            # training_labels = np.ones(len(training_data))
+            self.single_track_len = training_data.size()[1]
             training_dataset = AISDataset(training_data)
             testing_dataset = AISDataset(test_data)
             # generate loader
@@ -166,9 +171,10 @@ class TrackingDetectionModel:
 
         self.train_from_scratch(output_path=output_path)
 
-    def train_one_epoch(self, epoch):
+    def train_one_epoch(self, epoch, plot_sample = False):
         """
         Training based on Variation Recurrent Neural Network
+        :param plot_sample: True if model attention picture is needed.
         :param epoch: int
         :return: None
         """
@@ -193,10 +199,11 @@ class TrackingDetectionModel:
                            100. * batch_idx / len(self.train_loader),
                            kld_loss.data.item() / self.batch_size,
                            nll_loss.data.item() / self.batch_size))
-
-                sample = self.model.sample(28)
-                plt.imshow(sample.numpy())
-                plt.pause(1e-6)
+                if plot_sample:
+                    # can be changed
+                    sample = self.model.sample(10)
+                    plt.imshow(sample.numpy())
+                    plt.pause(1e-6)
 
             train_loss += loss.data.item()
 
@@ -222,13 +229,23 @@ class TrackingDetectionModel:
         print('====> Test set loss: KLD Loss = {:.4f}, NLL Loss = {:.4f} '.format(
             mean_kld_loss, mean_nll_loss))
 
-    def plot_track(self,normal_tracks=None, abnormal_tracks=None):
+    def sample_track(self, track_num):
         """
-        :param abnormal_tracks: if None use model data
-        :param normal_tracks: if None use model data
+        sample and reconstruct tracks
+        :param track_num: num of track points to reconstruct by default sample granularity.
+        :return: reconstructed tracks:Tensor[track_num, sample granularity, attribute]
+        """
+        if track_num%self.single_track_len !=0:
+            warnings.warn("Warning: partial broken tracks generated.")
+
+        return self.model.sample(track_num)
+
+    def plot_track(self, normal_tracks=None, abnormal_tracks=None):
+        """
+        :param abnormal_tracks: if None will not output abnormal tracks
+        :param normal_tracks: if None use model data, [number of tracks, sample points, attribute]
 	    """
-        # TODO data should come from model class
-        print(normal_tracks.size())
+        # TODO data should come from model class & deal with data transferring
         cmap = plt.cm.get_cmap("Blues")
         normal_size = len(normal_tracks)
         print(normal_size)
@@ -237,6 +254,15 @@ class TrackingDetectionModel:
             v_lat = track_tensor[:, 0] * self.lat_range + self.lat_min
             v_lon = track_tensor[:, 1] * self.lon_range + self.lon_min
             plt.plot(v_lon, v_lat, color=c, linewidth=0.8)
+        cmap2 = plt.cm.get_cmap("autumn")
+        if abnormal_tracks is not None:
+            abnormal_size = len(abnormal_tracks)
+            print(abnormal_size)
+            for idx, track_tensor in enumerate(abnormal_tracks):
+                c2 = cmap2(float(idx)/(abnormal_size-1))
+                v_lat = track_tensor[:, 0] * self.lat_range + self.lat_min
+                v_lon = track_tensor[:, 1] * self.lon_range + self.lon_min
+                plt.plot(v_lon, v_lat, color=c2, linewidth=0.8)
         plt.xlim([self.lon_min, self.lon_max])
         plt.ylim([self.lat_min, self.lat_max])
         plt.xlabel("Longitude")

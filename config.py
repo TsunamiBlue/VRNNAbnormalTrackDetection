@@ -26,6 +26,9 @@ save_every = 10
 split_ratio = 0.2
 cross_validation = False
 
+# downsample_interval by seconds
+downsample_interval = 600
+
 # analysis boundaries
 # coordinate, unit is degree
 LAT_MIN = -90

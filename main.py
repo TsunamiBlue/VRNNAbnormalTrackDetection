@@ -21,4 +21,5 @@ if __name__ == '__main__':
     TDModel.generate_dataloader(raw=ais_dataset)
     print(TDModel.train_loader.dataset.shape)
     TDModel.train_from_scratch(output_path=cfgs.MODEL_DATA_PATH)
-    TDModel.plot_track()
+    # TDModel.plot_track()
+    smp = TDModel.sample_track(287)

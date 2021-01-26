@@ -104,14 +104,14 @@ def four_hot_encoding(track_dict):
     A four hot encoding for tracks. Be careful.
     See concept at https://arxiv.org/abs/1506.02216
     :param track_dict:
-    :return: Tensor:[attribute, dataset,time]
+    :return: Tensor:[attribute,dataset,time]
     """
     ans = []
     # TODO implement four-hot encoding
     return ans
 
 
-def data_preprocessing(raw_data, unused_attribute=None, use_four_hot_encoding=False):
+def data_preprocessing(raw_data, unused_attribute=None, use_four_hot_encoding=False, downsample_interval=600):
     """
     preprocessing track dataset by mmsi.
     raw_data is initially a list of logs with mmsi, after preprocessing there will be no mmsi info to prevent
@@ -120,8 +120,7 @@ def data_preprocessing(raw_data, unused_attribute=None, use_four_hot_encoding=Fa
     Firstly, process downsampling to avoid four-hot encoding flooding with massive data in a short period of time.
     Secondly, delete bad tracks: 1) anchored 2) too short tracks 3) value out of bound
 
-    NOTICE
-    downsampling is set to 10 mins by default.
+    :param downsample_interval: downsampling is set to 10 mins/600 sec by default.
     :param use_four_hot_encoding: set True to replace normalization with four-hot encoding.
     :param unused_attribute: unnecessary attribute "heading" (index=5) for four-hot encoding. can introduce others by list.
     :param raw_data: a numpy ndarray which contains all logs retrieved from ais.
@@ -140,7 +139,7 @@ def data_preprocessing(raw_data, unused_attribute=None, use_four_hot_encoding=Fa
     for k, _ in track_dict.items():
         track_dict[k].sort(key=lambda x: x[4])
         # 1  down sampling and interval set to 600 seconds by default
-        track_dict[k] = down_sampling(track_dict[k], k)
+        track_dict[k] = down_sampling(track_dict[k], k, downsample_interval)
         # 2 delete bad tracks
         del_flag = delete_bad_tracks(track_dict[k], k)
         if del_flag:
