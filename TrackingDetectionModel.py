@@ -143,6 +143,7 @@ class TrackingDetectionModel:
         # save model to given path
         path = os.path.join(output_path, 'vrnn_state_dict_test.pth')
         torch.save(self.model.state_dict(), path)
+        # print(self.model.state_dict().keys())
         if not inner_invoking:
             print(f"DONE. Saved model at {path}")
         else:
@@ -180,7 +181,7 @@ class TrackingDetectionModel:
         for batch_idx, data in enumerate(self.train_loader):
             # forward, backward, optimize
             self.optimizer.zero_grad()
-            kld_loss, nll_loss, enc_log, dec_log = self.model(data)
+            kld_loss, nll_loss, enc_log, dec_log, _ = self.model(data)
             # print(list(self.model.children())[0])
             loss = kld_loss + nll_loss
             loss.backward()
@@ -217,7 +218,7 @@ class TrackingDetectionModel:
         mean_kld_loss, mean_nll_loss = 0, 0
         for batch_idx, data in enumerate(self.test_loader):
             # validating
-            kld_loss, nll_loss, _, _ = self.model(data)
+            kld_loss, nll_loss, _, _, _ = self.model(data)
             mean_kld_loss += kld_loss.data.item()
             mean_nll_loss += nll_loss.data.item()
 
@@ -245,22 +246,28 @@ class TrackingDetectionModel:
         :return: True if it's an abnormal track
         """
         test_data = test_data.unsqueeze(0)
-        kld_loss, nll_loss, (all_enc_mean, all_enc_std), (all_dec_mean, all_dec_std) = self.model(test_data)
+        kld_loss, nll_loss, (all_enc_mean, all_enc_std), (all_dec_mean, all_dec_std), (all_phi_x, all_phi_z) = self.model(test_data)
         print(f" kld_loss {kld_loss} \t nll_loss {nll_loss}\t")
         print(f" all_enc_mean {all_enc_mean[0].size()} \t all_enc_std {all_enc_std[0].size()}")
         print(f" all_dec_mean {all_dec_mean[0].size()} \t all_dec_std {all_dec_std[0].size()}")
+        print(f" all_phi_x {all_phi_x[0].size()} \t all_phi_z {all_phi_z[0].size()}")
+        print(f"{all_phi_x[-1]}")
+        log_likelihood = torch.log(all_phi_x[-1])
+        print(log_likelihood)
+        # start KDE estimation
+        # kde = stats.gaussian_kde(log_likelihood.detach().numpy())
+        # print(kde)
         self.abnormal.append(test_data.squeeze(0))
         return True
 
 
     def plot_track(self, normal_tracks=None, abnormal_tracks=None):
         """
-        # TODO re-write plot method.
+        # TODO re-write plot method. data should come from model class & deal with data transferring
         scratch plotting method, should be polished later.
         :param abnormal_tracks: if None will not output abnormal tracks
         :param normal_tracks: if None use model data, [number of tracks, sample points, attribute]
 	    """
-        # TODO data should come from model class & deal with data transferring
         cmap = plt.cm.get_cmap("Blues")
         normal_size = len(normal_tracks)
         print(normal_size)

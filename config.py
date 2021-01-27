@@ -13,7 +13,7 @@ import os
 
 # x dim is the same size as [LAT,LON,SOG,COG]
 x_dim = 4
-h_dim = 100
+h_dim = 10
 z_dim = 1
 n_layers = 1
 n_epochs = 10
@@ -46,6 +46,10 @@ COG_MAX = 360
 # heading, unit is degree
 HEADING_MIN = 0
 HEADING_MAX = 0
+
+# abnormal detection params
+ANOMALY_LAT_RESO = 0.1      # Lat resolution for anomaly detection.
+ANOMALY_LON_RESO = 0.1      # Lon resolution for anomaly detection.
 
 # PATH
 MAIN_PATH = os.path.abspath(os.path.dirname(__file__) + "./../")
