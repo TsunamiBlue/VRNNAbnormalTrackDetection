@@ -89,7 +89,7 @@ class VRNN(nn.Module):
 		# print(f"x.size() {x.size()}")
 		for t in range(x.size(0)):
 			phi_x_t = self.phi_x(x[t])
-			all_phi_x.append(phi_x_t)
+
 			# encoder
 			enc_t = self.enc(torch.cat([phi_x_t, h[-1]], 1))
 			enc_mean_t = self.enc_mean(enc_t)
@@ -103,7 +103,7 @@ class VRNN(nn.Module):
 			# sampling and reparameterization
 			z_t = self._reparameterized_sample(enc_mean_t, enc_std_t)
 			phi_z_t = self.phi_z(z_t)
-			all_phi_z.append(phi_z_t)
+
 			# print(f"z_t.size() {z_t.size()}")
 			print(f"phi_z_t {phi_z_t.size()}")
 			print(f"phi_x_t {phi_x_t.size()}")
@@ -127,11 +127,12 @@ class VRNN(nn.Module):
 			all_enc_mean.append(enc_mean_t)
 			all_dec_mean.append(dec_mean_t)
 			all_dec_std.append(dec_std_t)
+			all_phi_x.append(phi_x_t)
+			all_phi_z.append(phi_z_t)
 
-		return kld_loss, nll_loss, \
-				(all_enc_mean, all_enc_std), \
-				(all_dec_mean, all_dec_std), \
-			   	(all_phi_x, all_phi_z)
+		return kld_loss, nll_loss, (
+			all_enc_mean, all_enc_std, all_dec_mean, all_dec_std, all_phi_x, all_phi_z
+		)
 
 	def sample(self, seq_len):
 

@@ -43,13 +43,16 @@ class TrackingDetectionModel:
     A deep learning class, all in one.
     """
 
-    def __init__(self, cfg, abnormal=[]):
+    def __init__(self, cfg, seq_len=287, abnormal=None):
         """
          init service with all hyper-params
+        :param seq_len: single data sequence length after preprocessing
         :param cfg: see config.py
         :param abnormal: can specify abnormal tracks from outer resources.
         """
         # set hyperparameters
+        if abnormal is None:
+            abnormal = []
         self.x_dim = cfg.x_dim
         self.h_dim = cfg.h_dim
         self.z_dim = cfg.z_dim
@@ -239,23 +242,28 @@ class TrackingDetectionModel:
 
         return self.model.sample(track_num)
 
-    def abnormal_detection(self, test_data: torch.Tensor):
+    def abnormal_detection(self,saved_model_path,threshold:float, test_data: torch.Tensor):
         """
         abnormal detection method
+        :param saved_model_path: previous standard reference
+        :param threshold: tolerance threshold of abnormal tracks
         :param test_data: track Tensor
         :return: True if it's an abnormal track
         """
+        if saved_model_path is None:
+            warnings.warn("Warning: saved model path not specified")
+            return
+        loaded_params = torch.load(saved_model_path)
+        self.model.load_state_dict(loaded_params)
+        standard_ref_dec_mean = self.model.dec_mean
+        standard_ref_dec_std = self.model.dec_std
+
         test_data = test_data.unsqueeze(0)
-        kld_loss, nll_loss, (all_enc_mean, all_enc_std), (all_dec_mean, all_dec_std), (all_phi_x, all_phi_z) = self.model(test_data)
+        kld_loss, nll_loss, pkg = self.model(test_data)
+        _, _, test_dec_mean, test_dec_std, _, _ = pkg
         print(f" kld_loss {kld_loss} \t nll_loss {nll_loss}\t")
-        print(f" all_enc_mean {all_enc_mean[0].size()} \t all_enc_std {all_enc_std[0].size()}")
-        print(f" all_dec_mean {all_dec_mean[0].size()} \t all_dec_std {all_dec_std[0].size()}")
-        print(f" all_phi_x {all_phi_x[0].size()} \t all_phi_z {all_phi_z[0].size()}")
-        print(f"{all_phi_x[-1]}")
-        log_likelihood = torch.log(all_phi_x[-1])
-        print(log_likelihood)
-        # start KDE estimation
-        # kde = stats.gaussian_kde(log_likelihood.detach().numpy())
+        print(f" test_dec_mean {test_dec_mean[0].size()} \t test_dec_std {test_dec_std[0].size()}")
+
         # print(kde)
         self.abnormal.append(test_data.squeeze(0))
         return True

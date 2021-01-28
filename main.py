@@ -19,7 +19,7 @@ if __name__ == '__main__':
     ais_dataset = AISDataset(ais_data)
     TDModel = TrackingDetectionModel(cfgs)
     TDModel.generate_dataloader(raw=ais_dataset)
-    print(TDModel.train_loader.dataset.shape)
+    # print(TDModel.train_loader.dataset.shape)
     TDModel.train_from_scratch(output_path=cfgs.MODEL_DATA_PATH)
     # TDModel.plot_track()
     # smp = TDModel.sample_track(287)
