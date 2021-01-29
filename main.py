@@ -24,4 +24,4 @@ if __name__ == '__main__':
     # TDModel.plot_track()
     # smp = TDModel.sample_track(287)
     # print(ais_data[0].size())
-    TDModel.abnormal_detection(ais_data[0])
+    TDModel.abnormal_detection(0.1,ais_data[0])

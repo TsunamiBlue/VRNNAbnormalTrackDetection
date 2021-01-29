@@ -105,10 +105,10 @@ class VRNN(nn.Module):
 			phi_z_t = self.phi_z(z_t)
 
 			# print(f"z_t.size() {z_t.size()}")
-			print(f"phi_z_t {phi_z_t.size()}")
-			print(f"phi_x_t {phi_x_t.size()}")
+			# print(f"phi_z_t {phi_z_t.size()}")
+			# print(f"phi_x_t {phi_x_t.size()}")
 			# print(f"measure {sum(phi_x_t[:,0])}")
-			print()
+			# print()
 
 			# decoder
 			dec_t = self.dec(torch.cat([phi_z_t, h[-1]], 1))

@@ -55,4 +55,4 @@ ANOMALY_LON_RESO = 0.1      # Lon resolution for anomaly detection.
 MAIN_PATH = os.path.abspath(os.path.dirname(__file__) + "./../")
 TRAINING_DATA_PATH = os.path.join(MAIN_PATH,'VRNNAbnormalTrackingDetection','data','trainingData')
 # print(TRAINING_DATA_PATH)
-MODEL_DATA_PATH = os.path.join(MAIN_PATH,'VRNNAbnormalTrackingDetection','data','saves')
+MODEL_DATA_PATH = os.path.join(MAIN_PATH,'VRNNAbnormalTrackingDetection','data','saves','vrnn_state_dict_train.pth')

@@ -144,13 +144,12 @@ class TrackingDetectionModel:
             self.validate_current_epoch(epoch)
 
         # save model to given path
-        path = os.path.join(output_path, 'vrnn_state_dict_test.pth')
-        torch.save(self.model.state_dict(), path)
+        torch.save(self.model.state_dict(), output_path)
         # print(self.model.state_dict().keys())
         if not inner_invoking:
-            print(f"DONE. Saved model at {path}")
+            print(f"DONE. Saved model at {output_path}")
         else:
-            print(f"DONE. Updated model at {path}")
+            print(f"DONE. Updated model at {output_path}")
 
     def train_after_backbone(self, saved_model_path=None, output_path=None):
         """
@@ -184,7 +183,7 @@ class TrackingDetectionModel:
         for batch_idx, data in enumerate(self.train_loader):
             # forward, backward, optimize
             self.optimizer.zero_grad()
-            kld_loss, nll_loss, enc_log, dec_log, _ = self.model(data)
+            kld_loss, nll_loss, _ = self.model(data)
             # print(list(self.model.children())[0])
             loss = kld_loss + nll_loss
             loss.backward()
@@ -221,7 +220,7 @@ class TrackingDetectionModel:
         mean_kld_loss, mean_nll_loss = 0, 0
         for batch_idx, data in enumerate(self.test_loader):
             # validating
-            kld_loss, nll_loss, _, _, _ = self.model(data)
+            kld_loss, nll_loss, _ = self.model(data)
             mean_kld_loss += kld_loss.data.item()
             mean_nll_loss += nll_loss.data.item()
 
@@ -237,36 +236,46 @@ class TrackingDetectionModel:
         :param track_num: num of track points to reconstruct by default sample granularity.
         :return: reconstructed tracks:Tensor[track_num, sample granularity, attribute]
         """
-        if track_num%self.single_track_len !=0:
+        if track_num % self.single_track_len != 0:
             warnings.warn("Warning: partial broken tracks generated.")
 
         return self.model.sample(track_num)
 
-    def abnormal_detection(self,saved_model_path,threshold:float, test_data: torch.Tensor):
+    def abnormal_detection(self,threshold:float, test_data: torch.Tensor):
         """
         abnormal detection method
-        :param saved_model_path: previous standard reference
         :param threshold: tolerance threshold of abnormal tracks
         :param test_data: track Tensor
         :return: True if it's an abnormal track
         """
-        if saved_model_path is None:
-            warnings.warn("Warning: saved model path not specified")
-            return
+
+        saved_model_path = cfgs.MODEL_DATA_PATH
         loaded_params = torch.load(saved_model_path)
         self.model.load_state_dict(loaded_params)
-        standard_ref_dec_mean = self.model.dec_mean
-        standard_ref_dec_std = self.model.dec_std
+
+        # use existing model to resample standard data
+        sample_data = self.sample_track(test_data.size()[0])
+        print(test_data.size()[0])
+        sample_data = sample_data.unsqueeze(0)
+        kld_loss, nll_loss, pkg = self.model(sample_data)
+        standard_ref_enc_mean = pkg[0]
+        standard_ref_enc_std = pkg[1]
+        # standard_ref_dec_mean = pkg[2]
+        # standard_ref_dec_std = pkg[3]
 
         test_data = test_data.unsqueeze(0)
         kld_loss, nll_loss, pkg = self.model(test_data)
-        _, _, test_dec_mean, test_dec_std, _, _ = pkg
-        print(f" kld_loss {kld_loss} \t nll_loss {nll_loss}\t")
-        print(f" test_dec_mean {test_dec_mean[0].size()} \t test_dec_std {test_dec_std[0].size()}")
+        test_enc_mean, test_enc_std, test_dec_mean, test_dec_std, _, _ = pkg
+        # print(f" standard_ref_mean {standard_ref_enc_mean[0].size()} \t standard_ref_std {standard_ref_enc_std[0].size()}")
+        # print(f" test_mean {test_enc_mean[0].size()} \t test_std {test_enc_std[0].size()}")
+        print()
+        ans_flag = self._compare_sequence((standard_ref_enc_mean[0],standard_ref_enc_std[0]), (test_enc_mean[0], test_enc_std[0]),threshold=threshold)
 
-        # print(kde)
-        self.abnormal.append(test_data.squeeze(0))
-        return True
+        if not ans_flag:
+            self.abnormal.append(test_data.squeeze(0))
+            return True
+        else:
+            return False
 
 
     def plot_track(self, normal_tracks=None, abnormal_tracks=None):
@@ -300,5 +309,17 @@ class TrackingDetectionModel:
         plt.tight_layout()
         plt.show()
 
+    def _compare_sequence(self, standard, test,threshold):
+        standard_mean,standard_std = standard
+        test_mean,test_std = test
+        assert standard_mean.size() == test_mean.size()
+        assert standard_std.size() == test_std.size()
+        length = standard_mean.size()[0]
+        # print(torch.stack([model_seq, test_seq], dim=0).size())
+        result = np.zeros(length)
+        for idx in range(length):
+            if abs(standard_mean[idx]-test_mean[idx])>0.05 and abs(standard_std[idx]-test_std[idx]) > 0.05:
+                result[idx] = 1
+        return sum(result) / length > threshold
 
 
