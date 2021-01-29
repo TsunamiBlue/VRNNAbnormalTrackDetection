@@ -140,8 +140,8 @@ class TrackingDetectionModel:
         if not inner_invoking:
             print("Start training from scratch...")
         for epoch in range(1, self.n_epochs + 1):
-            self.train_one_epoch(epoch)
-            self.validate_current_epoch(epoch)
+            self._train_one_epoch(epoch)
+            self._validate_current_epoch(epoch)
 
         # save model to given path
         torch.save(self.model.state_dict(), output_path)
@@ -172,7 +172,7 @@ class TrackingDetectionModel:
 
         self.train_from_scratch(output_path=output_path)
 
-    def train_one_epoch(self, epoch, plot_sample = False):
+    def _train_one_epoch(self, epoch, plot_sample = False):
         """
         Training based on Variation Recurrent Neural Network
         :param plot_sample: True if model attention picture is needed.
@@ -211,7 +211,7 @@ class TrackingDetectionModel:
         print('====> Epoch: {} Average loss: {:.4f}'.format(
             epoch, train_loss / len(self.train_loader.dataset)))
 
-    def validate_current_epoch(self, epoch):
+    def _validate_current_epoch(self, epoch):
         """
         Evaluation based on both KL-Divergence and Negative Log Likelihood loss
         :param epoch: Int
