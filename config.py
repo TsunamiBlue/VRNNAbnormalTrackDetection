@@ -12,7 +12,7 @@ import os
 # hyperparameters
 
 # x dim is the same size as [LAT,LON,SOG,COG]
-x_dim = 4
+x_dim = 4  # SHOULD NOT CHANGE
 h_dim = 10
 z_dim = 1
 n_layers = 1
@@ -48,11 +48,12 @@ HEADING_MIN = 0
 HEADING_MAX = 0
 
 # abnormal detection params
-ANOMALY_LAT_RESO = 0.1      # Lat resolution for anomaly detection.
-ANOMALY_LON_RESO = 0.1      # Lon resolution for anomaly detection.
+ANOMALY_LAT_RESO = 0.1      # Lat resolution for anomaly detection. NOT USED
+ANOMALY_LON_RESO = 0.1      # Lon resolution for anomaly detection. NOT USED
 
 # PATH
 MAIN_PATH = os.path.abspath(os.path.dirname(__file__) + "./../")
 TRAINING_DATA_PATH = os.path.join(MAIN_PATH,'VRNNAbnormalTrackingDetection','data','trainingData')
 # print(TRAINING_DATA_PATH)
 MODEL_DATA_PATH = os.path.join(MAIN_PATH,'VRNNAbnormalTrackingDetection','data','saves','vrnn_state_dict_train.pth')
+IMAGE_PATH = os.path.join(MAIN_PATH,'VRNNAbnormalTrackingDetection','previewImage','regionID123456')

@@ -11,7 +11,7 @@ import config as cfgs
 from sklearn.model_selection import train_test_split
 import os
 import numpy as np
-from scipy import stats
+import time
 import warnings
 
 """
@@ -255,7 +255,7 @@ class TrackingDetectionModel:
 
         # use existing model to resample standard data
         sample_data = self.sample_track(test_data.size()[0])
-        print(test_data.size()[0])
+        # print(test_data.size()[0])
         sample_data = sample_data.unsqueeze(0)
         kld_loss, nll_loss, pkg = self.model(sample_data)
         standard_ref_enc_mean = pkg[0]
@@ -278,13 +278,16 @@ class TrackingDetectionModel:
             return False
 
 
-    def plot_track(self, normal_tracks=None, abnormal_tracks=None):
+    def plot_track(self,regionID, normal_tracks=None, abnormal_tracks=None):
         """
         # TODO re-write plot method. data should come from model class & deal with data transferring
         scratch plotting method, should be polished later.
+        :param regionID: always specify region ID.
         :param abnormal_tracks: if None will not output abnormal tracks
         :param normal_tracks: if None use model data, [number of tracks, sample points, attribute]
 	    """
+        # get image path from cfg
+        image_path = os.path.join(cfgs.IMAGE_PATH, f'{regionID}')
         cmap = plt.cm.get_cmap("Blues")
         normal_size = len(normal_tracks)
         print(normal_size)
@@ -307,6 +310,7 @@ class TrackingDetectionModel:
         plt.xlabel("Longitude")
         plt.ylabel("Latitude")
         plt.tight_layout()
+        plt.savefig(os.path.join(image_path,f'Version TIME_{time.time()}'))
         plt.show()
 
     def _compare_sequence(self, standard, test,threshold):
